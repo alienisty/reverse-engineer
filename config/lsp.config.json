@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "typescript": { "command": "typescript-language-server", "args": ["--stdio"] },
+    "python": { "command": "pyright-langserver", "args": ["--stdio"] },
+    "java": { "command": "jdtls", "args": [] }
+  },
+  "extensions": {
+    "ts": "typescript",
+    "js": "typescript",
+    "py": "python",
+    "java": "java"
+  }
+}

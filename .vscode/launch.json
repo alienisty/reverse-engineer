@@ -1,0 +1,53 @@
+{
+  "version": "0.1.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch CLI",
+      "runtimeArgs": [
+        "-r",
+        "tsx",
+        "src/cli.ts"
+      ],
+      "args": [
+        "--pwd",
+        "C:/Work/Source/horus/horus-server",
+        "--name",
+        "coalescing-processing-queue",
+        "./core/horus-core/src/main/java/au/com/onyxtech/horus/concurrent/CoalescingProcessingQueue.java",
+        "--output",
+        "./generated-designs"
+      ],
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "env": {
+        "LLM_MODEL": "gemini-3.5-flash",
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch CLI LM Studio",
+      "runtimeArgs": [
+        "-r",
+        "tsx",
+        "src/cli.ts"
+      ],
+      "args": [
+        "--pwd",
+        "C:/Work/Source/horus/horus-server",
+        "--name",
+        "notification-trigger",
+        "./core/horus-common/src/main/java/au/com/onyxtech/horus/service/condition/StandardMarketDataProvider.java"
+      ],
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal",
+      "env": {
+        "LLM_MODEL": "google/gemma-4-26b-a4b",
+        "LLM_API_KEY": "local",
+        "LLM_BASE_URL": "http://127.0.0.1:1234/v1"
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+generated-designs/
+
+# LLM-generated artifacts when --output/--pwd points at this repo
+**/design.md
+**/design.*.md
+**/prompt.md
+**/prompt.*.md
