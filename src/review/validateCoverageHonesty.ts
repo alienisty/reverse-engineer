@@ -1,4 +1,5 @@
 import { checklistEntryBlocksComplete } from './checklistCategory.js';
+import { isTestSourceFile } from '../utils/pathUtils.js';
 import type {
   ChecklistCoverageEntry,
   CoverageChecklistItem,
@@ -48,7 +49,15 @@ export function validateCoverageHonesty(
       continue;
     }
 
+    if (isTestSourceFile(entry.sourceFile)) {
+      continue;
+    }
+
     const expected = expectedById.get(entry.id);
+    if (expected && expected.category === 'test') {
+      continue;
+    }
+
     if (itemPassesHonesty(entry, expected, input.designDocument)) {
       continue;
     }

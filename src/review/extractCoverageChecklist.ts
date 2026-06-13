@@ -104,6 +104,7 @@ function buildFileItem(
   prefix: 'main' | 'dep' | 'use' | 'test',
   category: ChecklistCategory,
   relativePath: string,
+  symbols: string[] = [],
 ): CoverageChecklistItem {
   const fileName = basename(relativePath);
 
@@ -111,7 +112,7 @@ function buildFileItem(
     id: `${prefix}:${relativePath}`,
     label: fileName,
     sourceFile: relativePath,
-    searchTerms: fileSearchTerms(relativePath),
+    searchTerms: [...fileSearchTerms(relativePath), ...symbols],
     category,
   };
 }
@@ -137,12 +138,17 @@ export function extractCoverageChecklist(
 
   for (const absolutePath of context.main) {
     const relativePath = toRelativePath(absolutePath, pwd);
-    items.push(buildFileItem('main', 'main', relativePath));
+    let symbols: string[] = [];
+    let fileSymbols: CoverageChecklistItem[] = [];
 
     if (fsImpl.existsSync(absolutePath)) {
       const source = fsImpl.readFileSync(absolutePath, 'utf8');
-      items.push(...buildSymbolItems(relativePath, source));
+      fileSymbols = buildSymbolItems(relativePath, source);
+      symbols = fileSymbols.map((item) => item.searchTerms[0]!).filter(Boolean);
     }
+
+    items.push(buildFileItem('main', 'main', relativePath, symbols));
+    items.push(...fileSymbols);
   }
 
   for (const absolutePath of context.dependencies) {

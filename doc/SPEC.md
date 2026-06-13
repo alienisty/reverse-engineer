@@ -165,9 +165,10 @@ Test paths are detected by conventional directory and filename patterns (`/test/
 
 - Only **main** checklist gaps (including `symbol:` rows) block `COMPLETE`.
 - Unchecked `dep:` / `use:` / `test:` rows do not block `COMPLETE`.
-- False `[x]` claims on **main** rows only are auto-flipped via `validateCoverageHonesty` and generate blocking feedback.
+- False `[x]` claims on **main** rows only are auto-flipped via `validateCoverageHonesty` and generate blocking feedback. Honesty verification resolves claims using the checklist item's search terms; for `main` files, these search terms propagate nested symbol names to prevent false honesty failures when symbols are discussed without citing the filename. Test files and test symbols are entirely bypassed during honesty verification to prevent checking them against the design.
 - Validated manual feedback items always force `NEEDS_REVISION`.
 - Reviewer prompt requires detecting **Usage** copy-paste from **Uses** (consumer bodies or production class names) via manual feedback and unchecked `use:` rows; shared imports/main types alone are not treated as copy-paste.
+
 
 #### Revision scope (`validateRevisionPreservation`)
 

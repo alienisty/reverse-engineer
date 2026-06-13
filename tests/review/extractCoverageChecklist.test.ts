@@ -49,7 +49,7 @@ describe('extractCoverageChecklist', () => {
       id: 'main:src/service.ts',
       label: 'service.ts',
       sourceFile: 'src/service.ts',
-      searchTerms: ['service.ts', 'service'],
+      searchTerms: ['service.ts', 'service', 'Service'],
       category: 'main',
     });
   });

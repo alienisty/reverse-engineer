@@ -91,6 +91,66 @@ describe('validateCoverageHonesty', () => {
     expect(result.checklist.every((entry) => entry.covered)).toBe(true);
     expect(result.feedbackItems).toEqual([]);
   });
+
+  it('skips honesty check for test files even if they are in category main', () => {
+    const testExpected: CoverageChecklistItem[] = [
+      {
+        id: 'main:tests/ServiceTest.ts',
+        label: 'ServiceTest.ts',
+        sourceFile: 'tests/ServiceTest.ts',
+        searchTerms: ['ServiceTest.ts', 'ServiceTest'],
+        category: 'main',
+      },
+    ];
+    const testChecklist = [
+      {
+        id: 'main:tests/ServiceTest.ts',
+        label: 'ServiceTest.ts',
+        sourceFile: 'tests/ServiceTest.ts',
+        covered: true,
+        category: 'main' as const,
+      },
+    ];
+    const result = validateCoverageHonesty({
+      checklist: testChecklist,
+      expectedChecklist: testExpected,
+      designDocument: '# Some Design document without mentions',
+    });
+
+    expect(result.failedItemIds).toEqual([]);
+    expect(result.checklist[0]?.covered).toBe(true);
+    expect(result.feedbackItems).toEqual([]);
+  });
+
+  it('skips honesty check for symbols in test files', () => {
+    const testExpected: CoverageChecklistItem[] = [
+      {
+        id: 'symbol:tests/ServiceTest.ts:ServiceTest',
+        label: 'class ServiceTest in ServiceTest.ts',
+        sourceFile: 'tests/ServiceTest.ts',
+        searchTerms: ['ServiceTest'],
+        category: 'main',
+      },
+    ];
+    const testChecklist = [
+      {
+        id: 'symbol:tests/ServiceTest.ts:ServiceTest',
+        label: 'class ServiceTest in ServiceTest.ts',
+        sourceFile: 'tests/ServiceTest.ts',
+        covered: true,
+        category: 'main' as const,
+      },
+    ];
+    const result = validateCoverageHonesty({
+      checklist: testChecklist,
+      expectedChecklist: testExpected,
+      designDocument: '# Some Design document without mentions',
+    });
+
+    expect(result.failedItemIds).toEqual([]);
+    expect(result.checklist[0]?.covered).toBe(true);
+    expect(result.feedbackItems).toEqual([]);
+  });
 });
 
 describe('deriveReviewStatus', () => {

@@ -16,12 +16,30 @@ A tool that reverse engineers source code into detailed design documents. Given 
 
 ## Installation
 
+To install the dependencies and build the application:
+
 ```bash
 npm install
 npm run build
 ```
 
 The published CLI entry point is the compiled `dist/cli.js` output. During local development, `npm start -- ...` still runs the source entrypoint through `tsx`.
+
+### Global Installation (Run from any terminal)
+
+To make the `reverse-engineer` command available globally in your system, first ensure you have built the application (`npm run build`), and then run either of the following commands from the project root directory:
+
+1. **Symlink the package locally** (best for development/updates):
+   ```bash
+   npm link
+   ```
+
+2. **Install the package globally** from the project directory:
+   ```bash
+   npm install -g .
+   ```
+
+*Note: Depending on your system configuration, you may need administrator permissions (e.g., prefixing with `sudo` on Linux/macOS, or running the terminal as Administrator on Windows).*
 
 ## Usage
 
@@ -36,19 +54,22 @@ export LLM_MODEL=gpt-4
 Run the tool:
 
 ```bash
-# Basic usage
+# Basic usage (globally installed)
+reverse-engineer --name myproject ./service.ts ./handler.js
+
+# Or using the local dev script
 npm start -- --name myproject ./service.ts ./handler.js
 
 # With custom working directory
-npm start -- --pwd ./myrepo --name myproject ./service.ts ./handler.js
+reverse-engineer --pwd ./myrepo --name myproject ./service.ts ./handler.js
 
 # Write artifacts outside the workspace (--output; relative to cwd)
-npm start -- --pwd ./myrepo --output ./generated-docs --name myproject ./service.ts
+reverse-engineer --pwd ./myrepo --output ./generated-docs --name myproject ./service.ts
 
 # With an explicit LSP config overlay (relative to cwd)
-npm start -- --pwd ./myrepo --config ./myrepo-lsp.override.json --name myproject ./service.ts
+reverse-engineer --pwd ./myrepo --config ./myrepo-lsp.override.json --name myproject ./service.ts
 
-# Compiled CLI entrypoint
+# Compiled CLI entrypoint directly via node
 node dist/cli.js --name myproject ./service.ts ./handler.js
 ```
 
@@ -107,13 +128,14 @@ The tool writes artifacts to `<output>/<name>/` (or `<pwd>/<name>/` when `--outp
 
 After generation and initial mermaid repair, the tool performs a reliability-oriented loop:
 
-1. Build a programmatic checklist from discovered `main`/`references` files and extracted symbols.
+1. Build a programmatic checklist from discovered `main`/`references` files and extracted symbols. Symbol names defined in main files are propagated as search terms to their parent files, ensuring files are marked as honestly covered if either the file name or any of its main symbols are mentioned in the design.
 2. Ask the model for a structured review (`Coverage Check`, `Review Result`, `Feedback Items`).
 3. Parse and validate review output (including source-anchored feedback refs); retry malformed responses up to 3 times.
-4. Derive status in code (the model's `STATUS` line is advisory).
+4. Derive status in code (the model's `STATUS` line is advisory). Coverage honesty validation bypasses checks for test files and test symbols, since test names and class names must not appear in the design document.
 5. If revision is needed, request a constrained rewrite and validate structure + section preservation; retry up to 3 times.
 6. Re-run mermaid post-processing on each accepted revision.
 7. Stop early when status becomes `COMPLETE`, or after 3 rounds with warning logs and best-effort final output.
+
 
 ## Exit Codes
 
