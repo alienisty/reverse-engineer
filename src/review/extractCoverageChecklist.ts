@@ -1,6 +1,5 @@
 import * as path from 'node:path';
 import type { ContextMap } from '../types/context.js';
-import { isTestSourceFile } from '../utils/pathUtils.js';
 import type { ChecklistCategory, CoverageChecklistItem } from './types.js';
 
 function toRelativePath(absolutePath: string, pwd: string): string {
@@ -57,11 +56,7 @@ export function extractCoverageChecklist(
 
   for (const absolutePath of context.uses) {
     const relativePath = toRelativePath(absolutePath, pwd);
-    if (isTestSourceFile(relativePath)) {
-      items.push(buildFileItem('test', 'test', relativePath));
-    } else {
-      items.push(buildFileItem('use', 'use', relativePath));
-    }
+    items.push(buildFileItem('use', 'use', relativePath));
   }
 
   return items;

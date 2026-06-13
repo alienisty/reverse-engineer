@@ -5,8 +5,6 @@ import {
   qualifyArtifactFilename,
   qualifyRoundAttemptArtifactFilename,
   qualifyVersionedArtifactFilename,
-  isTestSourceFile,
-  partitionUsesPaths,
 } from '../src/utils/pathUtils.js';
 import * as path from 'node:path';
 
@@ -69,37 +67,4 @@ describe('pathUtils', () => {
     });
   });
 
-  describe('isTestSourceFile', () => {
-    it('should detect test directory paths', () => {
-      expect(isTestSourceFile('core/src/test/java/FooTest.java')).toBe(true);
-      expect(isTestSourceFile('core/src/testFixtures/java/BarTest.java')).toBe(true);
-      expect(isTestSourceFile('src/__tests__/widget.test.ts')).toBe(true);
-    });
-
-    it('should detect test filename patterns', () => {
-      expect(isTestSourceFile('src/widget.test.ts')).toBe(true);
-      expect(isTestSourceFile('src/widget.spec.ts')).toBe(true);
-      expect(isTestSourceFile('src/WidgetTest.java')).toBe(true);
-    });
-
-    it('should not classify production source as test', () => {
-      expect(isTestSourceFile('src/main/java/Service.java')).toBe(false);
-      expect(isTestSourceFile('src/app/bootstrap.ts')).toBe(false);
-    });
-  });
-
-  describe('partitionUsesPaths', () => {
-    it('should split production and test use paths', () => {
-      const paths = [
-        'src/app/Consumer.java',
-        'core/src/test/java/FooTest.java',
-        'core/src/testFixtures/java/BarTest.java',
-      ];
-
-      expect(partitionUsesPaths(paths)).toEqual({
-        productionUses: ['src/app/Consumer.java'],
-        testUses: ['core/src/test/java/FooTest.java', 'core/src/testFixtures/java/BarTest.java'],
-      });
-    });
-  });
 });

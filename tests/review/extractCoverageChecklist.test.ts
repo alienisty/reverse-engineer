@@ -73,7 +73,7 @@ describe('extractCoverageChecklist', () => {
     });
   });
 
-  it('should add test file rows with test prefix for test use paths', () => {
+  it('should add test file rows with use prefix for test use paths', () => {
     const testPath = 'core/src/test/java/au/example/ServiceTest.java';
     const context = createFixture({
       [testPath]: 'class ServiceTest {}',
@@ -81,14 +81,14 @@ describe('extractCoverageChecklist', () => {
     context.uses.push(path.join(pwd, testPath));
 
     const items = extractCoverageChecklist(context, pwd);
-    const fileItem = items.find((item) => item.id === `test:${toPosix(testPath)}`);
+    const fileItem = items.find((item) => item.id === `use:${toPosix(testPath)}`);
 
     expect(fileItem).toEqual({
-      id: `test:${toPosix(testPath)}`,
+      id: `use:${toPosix(testPath)}`,
       label: 'ServiceTest.java',
       sourceFile: toPosix(testPath),
       searchTerms: ['ServiceTest.java', 'ServiceTest'],
-      category: 'test',
+      category: 'use',
     });
   });
 

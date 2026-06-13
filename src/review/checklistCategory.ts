@@ -1,11 +1,7 @@
 import type { ChecklistCategory, ChecklistCoverageEntry } from './types.js';
 
 export function checklistCategoryFromId(id: string): ChecklistCategory {
-  if (id.startsWith('test:')) {
-    return 'test';
-  }
-
-  if (id.startsWith('use:')) {
+  if (id.startsWith('use:') || id.startsWith('test:')) {
     return 'use';
   }
 
@@ -26,10 +22,6 @@ export function revisionSectionsForChecklistId(id: string): string[] {
 
   if (category === 'use') {
     return ['Usage'];
-  }
-
-  if (category === 'test') {
-    return ['Component Design', 'Architecture'];
   }
 
   if (category === 'dependency') {

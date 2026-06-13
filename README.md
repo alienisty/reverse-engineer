@@ -128,10 +128,10 @@ The tool writes artifacts to `<output>/<name>/` (or `<pwd>/<name>/` when `--outp
 
 After generation and initial mermaid repair, the tool performs a reliability-oriented loop:
 
-1. Build a programmatic checklist from discovered `main`/`references` files and extracted symbols. Symbol names defined in main files are propagated as search terms to their parent files, ensuring files are marked as honestly covered if either the file name or any of its main symbols are mentioned in the design.
+1. Build a programmatic checklist from discovered `main`/`references` files and extracted symbols.
 2. Ask the model for a structured review (`Coverage Check`, `Review Result`, `Feedback Items`).
 3. Parse and validate review output (including source-anchored feedback refs); retry malformed responses up to 3 times.
-4. Derive status in code (the model's `STATUS` line is advisory). Coverage honesty validation bypasses checks for test files and test symbols, since test names and class names must not appear in the design document.
+4. Derive status in code (the model's `STATUS` line is advisory). Coverage honesty validation bypasses checks for uses files and uses symbols, since they must not appear in the design document except in the Usage section.
 5. If revision is needed, request a constrained rewrite and validate structure + section preservation; retry up to 3 times.
 6. Re-run mermaid post-processing on each accepted revision.
 7. Stop early when status becomes `COMPLETE`, or after 3 rounds with warning logs and best-effort final output.

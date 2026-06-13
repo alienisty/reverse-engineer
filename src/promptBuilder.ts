@@ -6,7 +6,6 @@ import {
   USAGE_SECTION_RULES,
 } from './sourceRoleModel.js';
 import type { ContextMap } from './types/context.js';
-import { isTestSourceFile } from './utils/pathUtils.js';
 
 export class PromptBuilder {
   private fs: typeof fs;
@@ -30,9 +29,6 @@ ${GENERATION_SOURCE_ROLE_MODEL}
 
 ## Uses
 {uses-files}
-
-## Tests
-{tests-files}
 
 
 You must strictly follow the following structure. Do not include any additional chapters, footnotes, or explanatory text outside of these sections.
@@ -136,20 +132,9 @@ ${USAGE_EVIDENCE_STYLE_GUIDELINE}
       return section;
     };
 
-    const productionUsePaths: string[] = [];
-    const testUsePaths: string[] = [];
-    for (const absolutePath of context.uses) {
-      if (isTestSourceFile(absolutePath)) {
-        testUsePaths.push(absolutePath);
-      } else {
-        productionUsePaths.push(absolutePath);
-      }
-    }
-
     return prompt
       .replace('{main-files}', buildSection(context.main))
       .replace('{dependency-files}', buildSection(context.dependencies))
-      .replace('{uses-files}', buildSection(productionUsePaths))
-      .replace('{tests-files}', buildSection(testUsePaths));
+      .replace('{uses-files}', buildSection(context.uses));
   }
 }

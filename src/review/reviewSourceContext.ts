@@ -2,27 +2,24 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { REVIEW_SOURCE_ROLE_MODEL, USAGE_SECTION_RULES } from '../sourceRoleModel.js';
 import type { ContextMap } from '../types/context.js';
-import { isTestSourceFile } from '../utils/pathUtils.js';
 
 export interface SourceFile {
   path: string;
   content: string;
 }
 
-export type SourceSection = 'main' | 'dependencies' | 'uses' | 'tests';
+export type SourceSection = 'main' | 'dependencies' | 'uses';
 
 export interface LoadedSourceContext {
   main: SourceFile[];
   dependencies: SourceFile[];
   uses: SourceFile[];
-  tests: SourceFile[];
 }
 
 const LAYERED_SECTIONS: { key: SourceSection; heading: string }[] = [
   { key: 'main', heading: 'Main' },
   { key: 'dependencies', heading: 'Dependencies' },
   { key: 'uses', heading: 'Uses' },
-  { key: 'tests', heading: 'Tests' },
 ];
 
 function toRelativePath(absolutePath: string, pwd: string): string {
@@ -75,22 +72,10 @@ export function loadSourceContext(
     return files;
   };
 
-  const productionUses: string[] = [];
-  const testUses: string[] = [];
-  for (const absolutePath of contextMap.uses) {
-    const relativePath = toRelativePath(absolutePath, pwd);
-    if (isTestSourceFile(relativePath)) {
-      testUses.push(absolutePath);
-    } else {
-      productionUses.push(absolutePath);
-    }
-  }
-
   return {
     main: loadBucket(contextMap.main),
     dependencies: loadBucket(contextMap.dependencies),
-    uses: loadBucket(productionUses),
-    tests: loadBucket(testUses),
+    uses: loadBucket(contextMap.uses),
   };
 }
 

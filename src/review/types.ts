@@ -1,4 +1,4 @@
-export type ChecklistCategory = 'main' | 'dependency' | 'use' | 'test';
+export type ChecklistCategory = 'main' | 'dependency' | 'use';
 
 export interface CoverageChecklistItem {
   id: string;

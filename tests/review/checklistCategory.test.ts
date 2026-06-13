@@ -11,7 +11,7 @@ describe('checklistCategory', () => {
     expect(checklistCategoryFromId('main:src/a.ts')).toBe('main');
     expect(checklistCategoryFromId('dep:src/lib.ts')).toBe('dependency');
     expect(checklistCategoryFromId('use:src/app.ts')).toBe('use');
-    expect(checklistCategoryFromId('test:src/ServiceTest.java')).toBe('test');
+    expect(checklistCategoryFromId('test:src/ServiceTest.java')).toBe('use');
     expect(checklistCategoryFromId('ref:legacy.ts')).toBe('dependency');
   });
 
@@ -44,10 +44,7 @@ describe('checklistCategory', () => {
   });
 
   it('routes revision sections by category', () => {
-    expect(revisionSectionsForChecklistId('test:src/ServiceTest.java')).toEqual([
-      'Component Design',
-      'Architecture',
-    ]);
+    expect(revisionSectionsForChecklistId('test:src/ServiceTest.java')).toEqual(['Usage']);
     expect(revisionSectionsForChecklistId('use:src/app.ts')).toEqual(['Usage']);
     expect(revisionSectionsForChecklistId('dep:src/lib.ts')).toEqual([
       'Component Design',

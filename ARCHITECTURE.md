@@ -27,7 +27,6 @@ This tool automates the creation of technical design documents by analyzing sour
 │   ├── promptBuilder.ts  # Prompt assembly for LLM input
 │   ├── review/           # Programmatic design review, checklist, and revision loop
 │   │   ├── extractCoverageChecklist.ts # Programmatic checklist extraction (propagates symbols as search terms)
-│   │   ├── validateCoverageHonesty.ts  # Verifies claims against design (bypasses test files/symbols)
 │   │   └── ...
 │   ├── sourceRoleModel.ts  # Shared source role model mapping
 │   ├── types/            # Core TypeScript types
@@ -49,7 +48,6 @@ This tool automates the creation of technical design documents by analyzing sour
 - **`MermaidPostProcessor` (`src/mermaid/`):** Extracts, parses, and validates all Mermaid diagrams in the generated design document, invoking the LLM up to three times to repair any invalid syntax.
 - **`DesignReviewProcessor` (`src/review/`):** Orchestrates the programmatic design review and revision loop:
   - **`extractCoverageChecklist`**: Generates a checklist of files and symbols from the main files. Defines symbol names defined in main files are propagated as search terms to their parent files.
-  - **`validateCoverageHonesty`**: Programmatically verifies checklist claims against the generated design document by checking for mentions of files or their symbols, bypassing any test files and test symbols.
   - **`validateRevisionPreservation`**: Restricts revision LLM requests to specific allowed sections targetable by feedback/checklist gaps.
 
 ## Data Flow
@@ -62,7 +60,7 @@ This tool automates the creation of technical design documents by analyzing sour
 7. **Design Review Loop (up to 3 rounds):**
    - The checklist is extracted (with symbols propagated to file search terms).
    - The LLM performs a structured review of the design against the checklist.
-   - Gaps are evaluated in code; honesty validation is executed, skipping test files/symbols.
+   - Gaps are evaluated in code.
    - If gaps/feedback exist and rounds remain, a revision prompt is generated, and a revised design is requested, validated for structural preservation, mermaid post-processed, and carried to the next round.
 8. **Output Writing:** Persists the final and versioned design, prompt, review, and revision logs to `<outputRoot>/<name>/`.
 

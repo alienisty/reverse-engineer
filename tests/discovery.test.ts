@@ -84,7 +84,8 @@ describe('DiscoveryService', () => {
     const context = await discoveryService.discoverContext(['src/main.ts'], pwd);
 
     expect(context.main).toContain(mainPath);
-    expect(context.main).toContain(implPath);
+    expect(context.dependencies).toContain(implPath);
+    expect(context.uses).toContain(implPath);
     expect(consoleErrorSpy).not.toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
     rmSync(pwd, { recursive: true, force: true });

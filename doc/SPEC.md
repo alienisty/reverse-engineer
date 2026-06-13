@@ -25,7 +25,7 @@ Mermaid Post-Process (validate all mermaid fences, retry repair up to 3 times)
         ↓
 Write `prompt.<model>.md` + `design.v0.<model>.md`
         ↓
-Extract Programmatic Coverage Checklist (`main:`/`dep:`/`use:`/`test:` file rows from `ContextMap`)
+Extract Programmatic Coverage Checklist (`main:`/`dep:`/`use:` file rows from `ContextMap`)
         ↓
 Design Review Loop (up to 3 rounds):
   review call → parse/feedback validation retries (max 3) → derive status
@@ -83,10 +83,9 @@ Promotion runs before `PromptBuilder` and `extractCoverageChecklist`, so promote
 | :--- | :--- | :--- |
 | **Main** | Core design subject | Overview, Architecture, Component Design, Data Flow, Interface Design, Roadmap, etc. |
 | **Dependencies** | What main implements against | Accuracy of main’s description; not standalone design subjects |
-| **Uses** | Read-only production wiring evidence | **Usage** only — illustrative examples synthesized from patterns; must not drive other sections |
-| **Tests** | Formal behavioral specification (from `uses` paths matching test patterns) | Verify Component Design / Data Flow; do not cite test class names; must not drive other sections |
+| **Uses** | Read-only wiring evidence (production and testing) | **Usage** only — illustrative examples synthesized from patterns; must not drive other sections |
 
-**Prohibitions (both prompts):** no consumer-driven architecture; no full designs for dependency modules; no test class citations; no use-site class names or verbatim consumer code in **Usage**; empty `uses` or test sources is acceptable.
+**Prohibitions (both prompts):** no consumer-driven architecture; no full designs for dependency modules; no use-site class names or verbatim consumer code in **Usage**; empty `uses` is acceptable.
 
 **Usage section:** Read **Uses** files to identify integration patterns, then write stable illustrative snippets with fictional consumer names and only **main** APIs. Do not copy production class names, packages, or multi-line consumer bodies.
 
@@ -94,7 +93,7 @@ Promotion runs before `PromptBuilder` and `extractCoverageChecklist`, so promote
 
 | LSP request | Bucket |
 | :--- | :--- |
-| `textDocument/implementation` (promote) | `main` |
+| `textDocument/implementation` | `dependencies` and `uses` |
 | `textDocument/typeDefinition` from `typeParameter` + `declaration` token (not already `main`) | `main` |
 | `textDocument/typeDefinition` (other, not already `main`) | `dependencies` |
 | `textDocument/references` (declared symbol only) | `uses` |
@@ -122,7 +121,7 @@ Builds a `ContextMap` by walking semantic tokens and routing LSP navigation resu
 Post-discovery LLM step that promotes integral dependency files to `main` (see Context classification above). `Orchestrator` invokes it between discovery and prompt building.
 
 ### Prompt Builder (`PromptBuilder`)
-Assembles the user prompt from `ContextMap` file contents under `## Main`, `## Dependencies`, `## Uses`, and `## Tests` (test paths partitioned from `uses`), with explicit role framing matching the shared source role model. Lives in `src/promptBuilder.ts` (application layer, not `utils`).
+Assembles the user prompt from `ContextMap` file contents under `## Main`, `## Dependencies`, and `## Uses`, with explicit role framing matching the shared source role model. Lives in `src/promptBuilder.ts` (application layer, not `utils`).
 
 ### Orchestrator (`Orchestrator`)
 Runs the pipeline: detect languages -> start LSPs -> discover context -> build prompt -> call LLM -> mermaid post-process -> extract coverage checklist -> run review/revision processor with immediate artifact persistence under `<outputRoot>/<name>/`.
@@ -136,7 +135,7 @@ Key responsibilities:
 ### Design Review Processor (`src/review/designReviewProcessor.ts`)
 Coordinates reliability checks around the review/revision loop. When an optional `DesignReviewArtifactSink` is provided (the orchestrator uses `FileDesignReviewArtifactSink`), prompts and designs are written to disk at each step rather than accumulated for batch export.
 
-1. Load layered review source context from `ContextMap` + disk reads (`reviewSourceContext.ts` — `## Main` / `## Dependencies` / `## Uses` / `## Tests`; same role model as generation).
+1. Load layered review source context from `ContextMap` + disk reads (`reviewSourceContext.ts` — `## Main` / `## Dependencies` / `## Uses`; same role model as generation).
 2. Build review prompt with precomputed checklist and source context (not by re-parsing `generationPrompt`).
 3. Retry review parse/validation up to `MAX_REVIEW_PARSE_ATTEMPTS` (3) for malformed responses or invalid manual feedback refs.
 4. Derive status programmatically (`deriveReviewStatus`) from checklist coverage + validated feedback. **Usage** copy-paste is judged by the reviewer model only (prompt instructs comparing **Uses** to **Usage** fenced code); there is no programmatic Usage validator.
@@ -155,15 +154,14 @@ Built from `ContextMap` before the first review round:
 | :--- | :--- | :--- |
 | `main:` | `main` | **Yes** |
 | `dep:` | `dependencies` | No (advisory; misdescription may still surface via feedback) |
-| `use:` | `uses` (production integration) | **No** |
-| `test:` | `uses` (test / test-fixture paths) | **No** |
+| `use:` | `uses` (production and testing integration) | **No** |
 
-Test paths are detected by conventional directory and filename patterns (`/test/`, `/testFixtures/`, `*.test.*`, `*Test.*`, etc.). Legacy `ref:` ids are treated as dependency category for parse compatibility.
+Legacy `ref:` ids are treated as dependency category for parse compatibility.
 
 #### Status derivation (`deriveReviewStatus`)
 
 - Only **main** checklist gaps block `COMPLETE`.
-- Unchecked `dep:` / `use:` / `test:` rows do not block `COMPLETE`.
+- Unchecked `dep:` / `use:` rows do not block `COMPLETE`.
 - Validated manual feedback items always force `NEEDS_REVISION`.
 - Reviewer prompt requires detecting **Usage** copy-paste from **Uses** (consumer bodies or production class names) via manual feedback and unchecked `use:` rows; shared imports/main types alone are not treated as copy-paste.
 
@@ -177,9 +175,6 @@ Allowed sections are derived from feedback targets plus uncovered checklist gaps
 | Main | Component Design + Architecture |
 | Dependency | Component Design + Architecture |
 | Use | Usage only |
-| Test | Component Design + Architecture |
-
-Generation and review prompts split production **Uses** from **Tests** (behavioral specification). Tests verify intended behavior in core sections; test class or file names must not appear in the design.
 
 ### Mermaid validation and repair (`src/mermaid/`)
 

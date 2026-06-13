@@ -179,7 +179,8 @@ export class DiscoveryService {
                   for (const location of implementationLocations) {
                     const locPath = uriToPath(getLocationUri(location));
                     if (isWithinPwd(locPath, pwd) && !context.main.includes(locPath)) {
-                      context.main.push(locPath);
+                      context.dependencies.add(locPath);
+                      context.uses.add(locPath);
                     }
                   }
 
