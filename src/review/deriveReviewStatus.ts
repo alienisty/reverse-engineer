@@ -1,5 +1,4 @@
 import { checklistEntryBlocksComplete } from './checklistCategory.js';
-import { validateCoverageHonesty } from './validateCoverageHonesty.js';
 import type {
   ChecklistCoverageEntry,
   CoverageChecklistItem,
@@ -44,13 +43,7 @@ function deriveStatus(
 }
 
 export function deriveReviewStatus(input: DeriveReviewStatusInput): DeriveReviewStatusResult {
-  const honesty = validateCoverageHonesty({
-    checklist: input.parsed.checklist,
-    expectedChecklist: input.expectedChecklist,
-    designDocument: input.designDocument,
-  });
-
-  const checklist = honesty.checklist;
+  const checklist = input.parsed.checklist;
   const originallyUncoveredIds = new Set(
     input.parsed.checklist.filter((entry) => !entry.covered).map((entry) => entry.id),
   );
@@ -64,7 +57,6 @@ export function deriveReviewStatus(input: DeriveReviewStatusInput): DeriveReview
     .map(buildChecklistGapFeedback);
   const feedbackItems: DesignReviewFeedbackItem[] = [
     ...checklistGapFeedback,
-    ...honesty.feedbackItems,
     ...input.parsed.feedbackItems,
   ];
 
@@ -81,7 +73,7 @@ export function deriveReviewStatus(input: DeriveReviewStatusInput): DeriveReview
       rawResponse: input.parsed.rawResponse,
     },
     statusOverridden,
-    honestyFailures: honesty.failedItemIds,
+    honestyFailures: [],
   };
 }
 

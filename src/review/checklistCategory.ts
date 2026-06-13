@@ -36,9 +36,5 @@ export function revisionSectionsForChecklistId(id: string): string[] {
     return ['Component Design', 'Architecture'];
   }
 
-  if (id.startsWith('symbol:')) {
-    return ['Component Design'];
-  }
-
   return ['Component Design', 'Architecture'];
 }

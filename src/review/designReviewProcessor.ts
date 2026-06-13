@@ -69,7 +69,6 @@ interface DerivedReviewOutcome {
   rawResponse: string;
   result: DesignReviewResult;
   statusOverridden: boolean;
-  honestyFailures: string[];
   manualFeedbackCount: number;
   terminalFailureReason?: string;
 }
@@ -306,15 +305,10 @@ export class DesignReviewProcessor {
         this.logInfo(`Review round ${params.round}: STATUS overridden by coverage check`);
       }
 
-      for (const itemId of derived.honestyFailures) {
-        this.logInfo(`Review round ${params.round}: coverage honesty failed for ${itemId}`);
-      }
-
       return {
         rawResponse: lastResponse,
         result: derived.result,
         statusOverridden: derived.statusOverridden,
-        honestyFailures: derived.honestyFailures,
         manualFeedbackCount,
       };
     }
@@ -404,7 +398,6 @@ function buildTerminalReviewFailureOutcome(input: {
       rawResponse: input.rawResponse,
     },
     statusOverridden: false,
-    honestyFailures: [],
     manualFeedbackCount: 1,
     terminalFailureReason: input.reason,
   };

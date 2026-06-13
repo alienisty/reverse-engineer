@@ -118,7 +118,7 @@ export class Orchestrator {
       this.fs.writeFileSync(path.join(outputDir, initialDesignFile), repairedDesign);
       log(`Wrote ${promptFile} and ${initialDesignFile}`);
 
-      const checklist = extractCoverageChecklist(context, config.pwd, this.fs);
+      const checklist = extractCoverageChecklist(context, config.pwd);
       log(
         `Extracted ${checklist.length} coverage checklist items from ${context.main.length} main file${context.main.length === 1 ? '' : 's'}`,
       );

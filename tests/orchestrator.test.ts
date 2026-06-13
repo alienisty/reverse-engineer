@@ -20,9 +20,8 @@ function passthroughMermaidPostProcessor() {
 function buildContextChecklist(
   context: { main: string[]; dependencies: string[]; uses: string[] },
   pwd: string,
-  fsImpl = buildMockFs(),
 ): CoverageChecklistItem[] {
-  return extractCoverageChecklist(context, pwd, fsImpl);
+  return extractCoverageChecklist(context, pwd);
 }
 
 function buildReviewResponse(

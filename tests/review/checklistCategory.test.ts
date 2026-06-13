@@ -9,7 +9,6 @@ import type { ChecklistCoverageEntry } from '../../src/review/types.js';
 describe('checklistCategory', () => {
   it('maps id prefixes to categories', () => {
     expect(checklistCategoryFromId('main:src/a.ts')).toBe('main');
-    expect(checklistCategoryFromId('symbol:src/a.ts:Foo')).toBe('main');
     expect(checklistCategoryFromId('dep:src/lib.ts')).toBe('dependency');
     expect(checklistCategoryFromId('use:src/app.ts')).toBe('use');
     expect(checklistCategoryFromId('test:src/ServiceTest.java')).toBe('test');
@@ -54,6 +53,5 @@ describe('checklistCategory', () => {
       'Component Design',
       'Architecture',
     ]);
-    expect(revisionSectionsForChecklistId('symbol:src/a.ts:run')).toEqual(['Component Design']);
   });
 });

@@ -17,13 +17,6 @@ const checklist: CoverageChecklistItem[] = [
     searchTerms: ['service.ts', 'service'],
     category: 'main',
   },
-  {
-    id: 'symbol:src/service.ts:drain',
-    label: 'method drain in service.ts',
-    sourceFile: 'src/service.ts',
-    searchTerms: ['drain'],
-    category: 'main',
-  },
 ];
 
 const generationPrompt = [
@@ -292,7 +285,7 @@ describe('DesignReviewProcessor', () => {
     expect(result.maxRoundsReachedWithGaps).toBe(true);
     expect(result.reviewRounds).toHaveLength(1);
     expect(result.unresolvedGaps).toEqual(
-      expect.arrayContaining(['main:src/service.ts', 'symbol:src/service.ts:drain']),
+      expect.arrayContaining(['main:src/service.ts']),
     );
     expect(warnings.some((message) => message.includes('ended early'))).toBe(true);
   });
@@ -397,7 +390,7 @@ describe('DesignReviewProcessor', () => {
     expect(warnings.some((message) => message.includes('max rounds reached with'))).toBe(true);
   });
 
-  it('logs STATUS override and honesty failures', async () => {
+  it('logs STATUS override', async () => {
     const falseComplete = [
       buildChecklistSection(checklist),
       '',

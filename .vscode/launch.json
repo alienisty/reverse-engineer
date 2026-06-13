@@ -12,10 +12,10 @@
       ],
       "args": [
         "--pwd",
-        "C:/Work/Source/horus/horus-server",
+        "C:/Work/Source/asyncworks",
         "--name",
-        "coalescing-processing-queue",
-        "./core/horus-core/src/main/java/au/com/onyxtech/horus/concurrent/CoalescingProcessingQueue.java",
+        "async",
+        "src/com/j2speed/async/Async.java",
         "--output",
         "./generated-designs"
       ],

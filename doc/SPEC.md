@@ -25,7 +25,7 @@ Mermaid Post-Process (validate all mermaid fences, retry repair up to 3 times)
         ↓
 Write `prompt.<model>.md` + `design.v0.<model>.md`
         ↓
-Extract Programmatic Coverage Checklist (main symbols + `main:`/`dep:`/`use:` file rows from `ContextMap`)
+Extract Programmatic Coverage Checklist (`main:`/`dep:`/`use:`/`test:` file rows from `ContextMap`)
         ↓
 Design Review Loop (up to 3 rounds):
   review call → parse/feedback validation retries (max 3) → derive status
@@ -75,7 +75,7 @@ After LSP discovery, when `dependencies` is non-empty, `classifyContextDependenc
 | Skip | No LLM call when `dependencies` is empty |
 | Failure | `ContextClassificationError` after parse retries exhausted |
 
-Promotion runs before `PromptBuilder` and `extractCoverageChecklist`, so promoted files receive `main:` / `symbol:` checklist rows instead of advisory `dep:` rows.
+Promotion runs before `PromptBuilder` and `extractCoverageChecklist`, so promoted files receive `main:` checklist rows instead of advisory `dep:` rows.
 
 ### Shared source role model (generation and review)
 
@@ -139,7 +139,7 @@ Coordinates reliability checks around the review/revision loop. When an optional
 1. Load layered review source context from `ContextMap` + disk reads (`reviewSourceContext.ts` — `## Main` / `## Dependencies` / `## Uses` / `## Tests`; same role model as generation).
 2. Build review prompt with precomputed checklist and source context (not by re-parsing `generationPrompt`).
 3. Retry review parse/validation up to `MAX_REVIEW_PARSE_ATTEMPTS` (3) for malformed responses or invalid manual feedback refs.
-4. Derive status programmatically (`deriveReviewStatus`) from checklist coverage + honesty checks + validated feedback. **Usage** copy-paste is judged by the reviewer model only (prompt instructs comparing **Uses** to **Usage** fenced code); there is no programmatic Usage validator.
+4. Derive status programmatically (`deriveReviewStatus`) from checklist coverage + validated feedback. **Usage** copy-paste is judged by the reviewer model only (prompt instructs comparing **Uses** to **Usage** fenced code); there is no programmatic Usage validator.
 5. If status is `NEEDS_REVISION` and rounds remain, run one revision LLM call per round. Post-revision validation checks structure (`validateDesignStructure`) and section preservation (`validateRevisionPreservation`) only; the next review round re-evaluates Usage illustrativeness via the reviewer.
 6. Mermaid-post-process each revision before it is promoted to the next round.
 7. Stop early on `COMPLETE`, or after `MAX_REVIEW_ROUNDS` (3) with unresolved gaps and warning logs. At most three `review-prompt.*` and three `revision-prompt.*` artifacts (one per round; parse-retry attempts may add extra review-prompt files for the same round).
@@ -151,21 +151,19 @@ This module throws `DesignReviewError` when review parse/validation retries are 
 
 Built from `ContextMap` before the first review round:
 
-| Checklist prefix | Source bucket | Symbol extraction | Blocks `COMPLETE` when unchecked? |
-| :--- | :--- | :--- | :--- |
-| `main:` | `main` | — | **Yes** |
-| `symbol:` | `main` | classes, interfaces, enums, functions, methods from main files | **Yes** |
-| `dep:` | `dependencies` | — | No (advisory; misdescription may still surface via feedback) |
-| `use:` | `uses` (production integration) | — | **No** |
-| `test:` | `uses` (test / test-fixture paths) | — | **No** |
+| Checklist prefix | Source bucket | Blocks `COMPLETE` when unchecked? |
+| :--- | :--- | :--- |
+| `main:` | `main` | **Yes** |
+| `dep:` | `dependencies` | No (advisory; misdescription may still surface via feedback) |
+| `use:` | `uses` (production integration) | **No** |
+| `test:` | `uses` (test / test-fixture paths) | **No** |
 
 Test paths are detected by conventional directory and filename patterns (`/test/`, `/testFixtures/`, `*.test.*`, `*Test.*`, etc.). Legacy `ref:` ids are treated as dependency category for parse compatibility.
 
 #### Status derivation (`deriveReviewStatus`)
 
-- Only **main** checklist gaps (including `symbol:` rows) block `COMPLETE`.
+- Only **main** checklist gaps block `COMPLETE`.
 - Unchecked `dep:` / `use:` / `test:` rows do not block `COMPLETE`.
-- False `[x]` claims on **main** rows only are auto-flipped via `validateCoverageHonesty` and generate blocking feedback. Honesty verification resolves claims using the checklist item's search terms; for `main` files, these search terms propagate nested symbol names to prevent false honesty failures when symbols are discussed without citing the filename. Test files and test symbols are entirely bypassed during honesty verification to prevent checking them against the design.
 - Validated manual feedback items always force `NEEDS_REVISION`.
 - Reviewer prompt requires detecting **Usage** copy-paste from **Uses** (consumer bodies or production class names) via manual feedback and unchecked `use:` rows; shared imports/main types alone are not treated as copy-paste.
 
@@ -176,7 +174,7 @@ Allowed sections are derived from feedback targets plus uncovered checklist gaps
 
 | Checklist category | Allowed revision sections |
 | :--- | :--- |
-| Main / `symbol:` | Component Design (symbols) or Component Design + Architecture (file rows) |
+| Main | Component Design + Architecture |
 | Dependency | Component Design + Architecture |
 | Use | Usage only |
 | Test | Component Design + Architecture |

@@ -1,19 +1,9 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { extractSymbolsFromSource } from '../review/extractCoverageChecklist.js';
 import type { ContextMap } from '../types/context.js';
 
 function toRelativePath(absolutePath: string, pwd: string): string {
   return path.relative(pwd, absolutePath).split(path.sep).join('/');
-}
-
-function formatSymbolSummary(source: string): string {
-  const symbols = extractSymbolsFromSource(source);
-  if (symbols.length === 0) {
-    return '(no top-level symbols detected)';
-  }
-
-  return symbols.map((symbol) => `${symbol.kind} ${symbol.name}`).join(', ');
 }
 
 function buildFileEntry(absolutePath: string, pwd: string, fsImpl: typeof fs): string {
@@ -23,7 +13,6 @@ function buildFileEntry(absolutePath: string, pwd: string, fsImpl: typeof fs): s
   if (fsImpl.existsSync(absolutePath)) {
     const source = fsImpl.readFileSync(absolutePath, 'utf8');
     const lang = path.extname(absolutePath).slice(1);
-    entry += ` — ${formatSymbolSummary(source)}`;
     entry += `\n\`\`\`${lang}\n${source}\n\`\`\``;
   }
 
