@@ -116,7 +116,7 @@ The `LSPManager` orchestrates multiple simultaneous language server instances. I
 See [LSP.md](./LSP.md) for discovery requests and response handling.
 
 ### Discovery Service (`DiscoveryService`)
-Builds a `ContextMap` by walking semantic tokens and routing LSP navigation results into three buckets (see LSP bucket routing above). Handles `null`, single, and array LSP location results; logs and continues on per-file or per-symbol failures. Returns all deduped paths per bucket within `--pwd`.
+Builds a `ContextMap` by first querying `textDocument/documentSymbol` to identify the file header, scanning unique header words, and resolving their imports via LSP definitions. It then walks semantic tokens and routes LSP navigation results into three buckets (see LSP bucket routing above). Handles `null`, single, and array LSP location results; logs and continues on per-file or per-symbol failures. Returns all deduped paths per bucket within `--pwd`.
 
 ### Context classification (`src/classify/`)
 Post-discovery LLM step that promotes integral dependency files to `main` (see Context classification above). `Orchestrator` invokes it between discovery and prompt building.

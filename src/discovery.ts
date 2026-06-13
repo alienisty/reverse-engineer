@@ -53,6 +53,37 @@ function isGenericTypeParameterDeclaration(typeName: string, modifiers: Set<stri
   return typeName === 'typeParameter' && modifiers.has('declaration');
 }
 
+function findMinStartLine(symbols: any[]): number {
+  let minLine = Infinity;
+
+  const traverse = (symbol: any) => {
+    if (!symbol) return;
+
+    if (symbol.range && symbol.range.start) {
+      if (symbol.range.start.line < minLine) {
+        minLine = symbol.range.start.line;
+      }
+    }
+    if (symbol.location && symbol.location.range && symbol.location.range.start) {
+      if (symbol.location.range.start.line < minLine) {
+        minLine = symbol.location.range.start.line;
+      }
+    }
+
+    if (Array.isArray(symbol.children)) {
+      for (const child of symbol.children) {
+        traverse(child);
+      }
+    }
+  };
+
+  for (const sym of symbols) {
+    traverse(sym);
+  }
+
+  return minLine;
+}
+
 export class DiscoveryService {
   private lspManager: LSPManager;
   private config: LSPConfigs;
@@ -88,6 +119,81 @@ export class DiscoveryService {
         const text = readFileSync(absolutePath, 'utf-8');
 
         await this.lspManager.openDocument(lang, uri, lang, 1, text);
+
+        // Language-agnostic header import resolving
+        let headerEndLine = Infinity;
+        try {
+          const symbols = await this.lspManager.sendRequest<any, any>(
+            lang,
+            'textDocument/documentSymbol',
+            { textDocument: { uri } }
+          );
+          if (Array.isArray(symbols) && symbols.length > 0) {
+            const minLine = findMinStartLine(symbols);
+            if (minLine !== Infinity) {
+              headerEndLine = minLine;
+            }
+          }
+        } catch (err) {
+          console.error(`Error fetching document symbols for ${file}:`, err);
+        }
+
+        const lines = text.split(/\r?\n/);
+        const scanEndLine = Math.min(lines.length, headerEndLine, 100);
+
+        const uniqueWords = new Map<string, { line: number; character: number }>();
+        const wordRegex = /[a-zA-Z_][a-zA-Z0-9_]*/g;
+
+        for (let lineIndex = 0; lineIndex < scanEndLine; lineIndex++) {
+          const line = lines[lineIndex]!;
+          let match;
+          while ((match = wordRegex.exec(line)) !== null) {
+            const word = match[0];
+            if (word.length >= 2 && !uniqueWords.has(word)) {
+              uniqueWords.set(word, { line: lineIndex, character: match.index });
+            }
+          }
+        }
+
+        for (const [word, pos] of uniqueWords.entries()) {
+          try {
+            // Query definition
+            const definitions = normalizeMany(await this.lspManager.sendRequest(
+              lang,
+              'textDocument/definition',
+              {
+                textDocument: { uri },
+                position: pos
+              }
+            ) as MaybeMany<DiscoveryLocation>);
+
+            for (const location of definitions) {
+              const locPath = uriToPath(getLocationUri(location));
+              if (isWithinPwd(locPath, pwd) && !context.main.includes(locPath)) {
+                context.dependencies.add(locPath);
+              }
+            }
+
+            // Query typeDefinition
+            const typeDefinitions = normalizeMany(await this.lspManager.sendRequest(
+              lang,
+              TypeDefinitionRequest.method,
+              {
+                textDocument: { uri },
+                position: pos
+              }
+            ) as MaybeMany<DiscoveryLocation>);
+
+            for (const location of typeDefinitions) {
+              const locPath = uriToPath(getLocationUri(location));
+              if (isWithinPwd(locPath, pwd) && !context.main.includes(locPath)) {
+                context.dependencies.add(locPath);
+              }
+            }
+          } catch (err) {
+            console.error(`Error resolving definition for header word "${word}" in ${file} at ${pos.line}:${pos.character}:`, err);
+          }
+        }
 
         const tokens = await this.lspManager.sendRequest<{ textDocument: { uri: string } }, SemanticTokens | null>(lang, SemanticTokensRequest.method, {
           textDocument: { uri }

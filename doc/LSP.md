@@ -4,7 +4,7 @@ This document describes how the reverse-engineering tool uses LSP for workspace 
 
 ## Overview
 
-Discovery is **server-driven**: the client walks semantic tokens in each input file and issues LSP navigation requests to find related implementation and reference files. The tool does **not** scan imports with a local AST or flag “implicit dependencies” by comparing definition URIs to import lists.
+Discovery is **server-driven**: the client queries the language server for document symbols to identify the file header and scan imports/dependencies, and walks semantic tokens in each input file, issuing LSP navigation requests to find related implementation and reference files. The tool does **not** rely on language-specific regexes or AST parsers to match import patterns.
 
 The result is a `ContextMap` with three buckets:
 
@@ -49,14 +49,23 @@ Implemented in `DiscoveryService.discoverContext` (`src/discovery.ts`).
 ### Per input file
 
 1. Resolve the absolute path under `--pwd` and map the file extension to a language via config.
-2. Request **`textDocument/semanticTokens/full`** for the file URI.
-3. Decode the delta-encoded `data` array using the server’s semantic-token legend from initialize capabilities.
-4. For each token whose type is in the discoverable set (`type`, `typeParameter`, `class`, `interface`, `function`, `method`, `variable`, `property`, `enum`, etc.):
+2. Open the document (`textDocument/didOpen`).
+3. Query **`textDocument/documentSymbol`** to identify declarations and locate the file header:
+   - Traverse the symbols to find the start line of the first declared symbol (`minStartLine`).
+   - Define the file header range as lines from `0` to `minStartLine - 1` (capped at at most `100` lines).
+4. Scan the file header range for unique words of length >= 2 matching `/[a-zA-Z_][a-zA-Z0-9_]*/g`.
+5. For the first occurrence of each unique word in the header:
+   - Query **`textDocument/definition`** and **`textDocument/typeDefinition`** at its line/character coordinate.
+   - If any resolved target path is within the workspace and not already in `main`, add it to `dependencies`.
+6. Request **`textDocument/semanticTokens/full`** for the file URI.
+7. Decode the delta-encoded `data` array using the server’s semantic-token legend from initialize capabilities.
+8. For each token whose type is in the discoverable set (`type`, `typeParameter`, `class`, `interface`, `function`, `method`, `variable`, `property`, `enum`, etc.):
    - Request **`textDocument/typeDefinition`** at the token position.
    - When the token is a generic type-parameter declaration (`typeParameter` + `declaration` modifier), add in-workspace type-definition paths to **`main`** (and remove from `dependencies` if previously added).
    - Otherwise, when the type definition is not already in `main`, add in-workspace paths to **`dependencies`**.
+   - Request **`textDocument/definition`** at the token position, adding in-workspace resolved paths to **`dependencies`** (when not already in `main`).
    - When the type definition resolves to the **same file** and the token has `public` + `declaration` modifiers:
-     - For `interface` or `abstract` declarations: request **`textDocument/implementation`** and add in-workspace implementation paths to `main`.
+     - For `interface` or `abstract` declarations: request **`textDocument/implementation`** and add in-workspace implementation paths to `dependencies`.
      - For `class` or `interface`: request **`textDocument/references`** (excluding the declaration) and add in-workspace reference paths to `uses`.
 
 ### Response normalization
@@ -77,7 +86,9 @@ Discovered URIs are converted to filesystem paths and kept only when `isWithinPw
 
 | Method | Role in discovery |
 | :--- | :--- |
+| `textDocument/documentSymbol` | Identify symbols to locate the file header boundaries |
 | `textDocument/semanticTokens/full` | Enumerate type-like tokens to analyze |
+| `textDocument/definition` | Resolve standard and static imports in the header, and symbol definitions in code |
 | `textDocument/typeDefinition` | Resolve where a token’s type is defined |
 | `textDocument/implementation` | Find concrete implementations of abstract types/interfaces |
 | `textDocument/references` | Find usages that provide supporting context |

@@ -100,7 +100,71 @@ export class LSPManager {
       const initializeRequest = connection.sendRequest(InitializeRequest.method, {
         processId: process.pid,
         rootUri,
-        capabilities: {},
+        capabilities: {
+          textDocument: {
+            definition: {
+              dynamicRegistration: true,
+              linkSupport: true,
+            },
+            typeDefinition: {
+              dynamicRegistration: true,
+              linkSupport: true,
+            },
+            implementation: {
+              dynamicRegistration: true,
+              linkSupport: true,
+            },
+            references: {
+              dynamicRegistration: true,
+            },
+            semanticTokens: {
+              dynamicRegistration: true,
+              tokenTypes: [
+                'namespace',
+                'type',
+                'class',
+                'enum',
+                'interface',
+                'struct',
+                'typeParameter',
+                'parameter',
+                'variable',
+                'property',
+                'enumMember',
+                'event',
+                'function',
+                'method',
+                'macro',
+                'keyword',
+                'modifier',
+                'comment',
+                'string',
+                'number',
+                'regexp',
+                'operator',
+                'decorator',
+              ],
+              tokenModifiers: [
+                'declaration',
+                'definition',
+                'readonly',
+                'static',
+                'deprecated',
+                'abstract',
+                'async',
+                'modification',
+                'documentation',
+                'defaultLibrary',
+              ],
+              formats: ['relative'],
+              requests: {
+                full: {
+                  delta: true,
+                },
+              },
+            },
+          },
+        },
       }) as Promise<InitializeResult>;
 
       const initResult: InitializeResult = await this.withInitializationTimeout(

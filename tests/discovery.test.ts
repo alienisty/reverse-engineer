@@ -449,4 +449,111 @@ describe('DiscoveryService', () => {
     expect(context.uses).not.toContain(defPath);
     rmSync(pwd, { recursive: true, force: true });
   });
+
+  it('should discover dependency via static import reference in code body', async () => {
+    const pwd = mkdtempSync(path.join(os.tmpdir(), 'reverse-engineer-discovery-'));
+    const srcDir = path.join(pwd, 'src');
+    mkdirSync(srcDir, { recursive: true });
+    const mainPath = path.join(srcDir, 'main.java');
+    const depPath = path.join(srcDir, 'HandlingProcessor.java');
+    writeFileSync(mainPath, 'import static com.j2speed.async.HandlingProcessor.complete;\nclass Main {\n  void foo() {\n    complete();\n  }\n}');
+    writeFileSync(depPath, 'class HandlingProcessor {}');
+
+    const mockLsp = {
+      openDocument: jest.fn().mockResolvedValue(undefined),
+      sendRequest: jest.fn((lang: string, method: string, params: any) => {
+        if (method === 'textDocument/semanticTokens/full') {
+          // Mock a semantic token for 'complete' at line 3, character 4, length 8, type 0 ('method')
+          return Promise.resolve({ data: [3, 4, 8, 0, 0] });
+        }
+        if (method === 'textDocument/definition') {
+          if (params.position.line === 3 && params.position.character === 4) {
+            return Promise.resolve([{ uri: pathToFileURL(depPath).toString() }]);
+          }
+        }
+        return Promise.resolve([]);
+      }),
+      getSemanticTokensLegend: jest.fn(() => ({
+        tokenTypes: ['method'],
+        tokenModifiers: [],
+      })),
+    };
+
+    const discoveryService = new DiscoveryService(mockLsp as unknown as LSPManager, {
+      servers: { java: { command: 'java', args: [] } },
+      extensions: { java: 'java' },
+    });
+    const context = await discoveryService.discoverContext(['src/main.java'], pwd);
+
+    expect(context.main).toContain(mainPath);
+    expect(context.dependencies).toContain(depPath);
+    rmSync(pwd, { recursive: true, force: true });
+  });
+
+  it('should resolve dependencies from the file header using document symbols and definitions', async () => {
+    const pwd = mkdtempSync(path.join(os.tmpdir(), 'reverse-engineer-discovery-'));
+    const srcDir = path.join(pwd, 'src');
+    mkdirSync(srcDir, { recursive: true });
+    const mainPath = path.join(srcDir, 'main.java');
+    const depPath = path.join(srcDir, 'HandlingProcessor.java');
+
+    // File contains a header with static imports (lines 0-2) and class starting on line 3
+    writeFileSync(mainPath, `import static com.j2speed.async.HandlingProcessor.complete;
+import static com.j2speed.async.HandlingProcessor.handleException;
+
+public class Main {}`);
+    writeFileSync(depPath, 'public class HandlingProcessor {}');
+
+    const mockLsp = {
+      openDocument: jest.fn().mockResolvedValue(undefined),
+      sendRequest: jest.fn((lang: string, method: string, params: any) => {
+        if (method === 'textDocument/documentSymbol') {
+          // Return a document symbol that starts at line 3, indicating lines 0-2 are the header
+          return Promise.resolve([
+            {
+              range: {
+                start: { line: 3, character: 0 },
+                end: { line: 3, character: 19 }
+              },
+              children: []
+            }
+          ]);
+        }
+        if (method === 'textDocument/semanticTokens/full') {
+          return Promise.resolve({ data: [] });
+        }
+        if (method === 'textDocument/definition' || method === 'textDocument/typeDefinition') {
+          // In 'import static com.j2speed.async.HandlingProcessor.complete;'
+          // 'HandlingProcessor' is at character 32 on lines 0 and 1, 'complete' is at character 50 on line 0
+          const line = params.position.line;
+          const character = params.position.character;
+          if ((line === 0 || line === 1) && (character === 32 || character === 50)) {
+            return Promise.resolve([{ uri: pathToFileURL(depPath).toString() }]);
+          }
+        }
+        return Promise.resolve([]);
+      }),
+      getSemanticTokensLegend: jest.fn(() => ({
+        tokenTypes: [],
+        tokenModifiers: [],
+      })),
+    };
+
+    const discoveryService = new DiscoveryService(mockLsp as unknown as LSPManager, {
+      servers: { java: { command: 'jdtls', args: [] } },
+      extensions: { java: 'java' },
+    });
+    const context = await discoveryService.discoverContext(['src/main.java'], pwd);
+
+    expect(context.main).toContain(mainPath);
+    expect(context.dependencies).toContain(depPath);
+    expect(context.uses).not.toContain(depPath);
+
+    // Check that we requested definitions for words in the header
+    const definitionCalls = mockLsp.sendRequest.mock.calls.filter(c => c[1] === 'textDocument/definition');
+    expect(definitionCalls.length).toBeGreaterThan(0);
+
+    rmSync(pwd, { recursive: true, force: true });
+  });
 });
+

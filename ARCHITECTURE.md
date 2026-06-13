@@ -41,7 +41,7 @@ This tool automates the creation of technical design documents by analyzing sour
 ## Core Components
 - **`Orchestrator` (`src/orchestrator.ts`):** The central controller. It manages the sequence: language detection -> LSP startup -> workspace discovery -> context classification -> prompt building -> LLM invocation -> mermaid post-processing -> extract checklist -> design review loop -> file saving.
 - **`LSPManager` (`src/lspManager.ts`):** Manages multiple simultaneous LSP instances based on detected languages.
-- **`DiscoveryService` (`src/discovery.ts`):** Uses LSP to extract symbols, definitions, and references to build a context graph of the codebase.
+- **`DiscoveryService` (`src/discovery.ts`):** Uses LSP (document symbols, definitions, type definitions, references) to discover workspace imports, symbols, and references to build a context graph of the codebase.
 - **`ContextClassifier` (`src/classify/`):** Invokes the LLM to classify discovered dependencies and promote integral candidates to `main` files.
 - **`LLMService` (`src/llm.ts`):** Interfaces with the configured LLM API using the official Node.js SDK.
 - **`PromptBuilder` (`src/promptBuilder.ts`):** Converts the classified context map into a structured prompt for the LLM.
