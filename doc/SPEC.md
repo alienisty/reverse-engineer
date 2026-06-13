@@ -93,7 +93,8 @@ Promotion runs before `PromptBuilder` and `extractCoverageChecklist`, so promote
 
 | LSP request | Bucket |
 | :--- | :--- |
-| `textDocument/implementation` | `dependencies` and `uses` |
+| `textDocument/implementation` | `dependencies` |
+| `textDocument/definition` (referenced type definition, not already `main`) | `dependencies` |
 | `textDocument/typeDefinition` from `typeParameter` + `declaration` token (not already `main`) | `main` |
 | `textDocument/typeDefinition` (other, not already `main`) | `dependencies` |
 | `textDocument/references` (declared symbol only) | `uses` |

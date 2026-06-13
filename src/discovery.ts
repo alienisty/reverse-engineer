@@ -163,7 +163,21 @@ export class DiscoveryService {
                     context.dependencies.add(locPath);
                   }
                 }
+                const definitions = normalizeMany(await this.lspManager.sendRequest(
+                  lang,
+                  'textDocument/definition',
+                  {
+                    textDocument: { uri },
+                    position
+                  }
+                ) as MaybeMany<DiscoveryLocation>);
 
+                for (const location of definitions) {
+                  const locPath = uriToPath(getLocationUri(location));
+                  if (isWithinPwd(locPath, pwd) && !context.main.includes(locPath)) {
+                    context.dependencies.add(locPath);
+                  }
+                }
                 if (typeDefinitions.some(def => getLocationUri(def) === uri)) {
                   const implementationLocations = modifiers.has('public') && modifiers.has('declaration') && (modifiers.has('abstract') || typeName === 'interface')
                     ? normalizeMany(await this.lspManager.sendRequest(

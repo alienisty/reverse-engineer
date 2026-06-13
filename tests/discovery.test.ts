@@ -411,4 +411,42 @@ describe('DiscoveryService', () => {
     expect(context.main).not.toContain(refPath);
     rmSync(pwd, { recursive: true, force: true });
   });
+
+  it('should discover dependency via textDocument/definition', async () => {
+    const pwd = mkdtempSync(path.join(os.tmpdir(), 'reverse-engineer-discovery-'));
+    const srcDir = path.join(pwd, 'src');
+    mkdirSync(srcDir, { recursive: true });
+    const mainPath = path.join(srcDir, 'main.ts');
+    const defPath = path.join(srcDir, 'def.ts');
+    writeFileSync(mainPath, 'class Main { x: Def; }');
+    writeFileSync(defPath, 'class Def {}');
+
+    const mockLsp = {
+      openDocument: jest.fn().mockResolvedValue(undefined),
+      sendRequest: jest.fn((lang: string, method: string) => {
+        if (method === 'textDocument/semanticTokens/full') {
+          return Promise.resolve({ data: [0, 0, 4, 0, 3] });
+        }
+        if (method === 'textDocument/definition') {
+          return Promise.resolve([{ uri: pathToFileURL(defPath).toString() }]);
+        }
+        return Promise.resolve([]);
+      }),
+      getSemanticTokensLegend: jest.fn(() => ({
+        tokenTypes: ['class'],
+        tokenModifiers: ['public', 'declaration'],
+      })),
+    };
+
+    const discoveryService = new DiscoveryService(mockLsp as unknown as LSPManager, {
+      servers: { typescript: { command: 'ts', args: [] } },
+      extensions: { ts: 'typescript' },
+    });
+    const context = await discoveryService.discoverContext(['src/main.ts'], pwd);
+
+    expect(context.main).toContain(mainPath);
+    expect(context.dependencies).toContain(defPath);
+    expect(context.uses).not.toContain(defPath);
+    rmSync(pwd, { recursive: true, force: true });
+  });
 });
