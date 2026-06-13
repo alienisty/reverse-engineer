@@ -180,7 +180,6 @@ export class DiscoveryService {
                     const locPath = uriToPath(getLocationUri(location));
                     if (isWithinPwd(locPath, pwd) && !context.main.includes(locPath)) {
                       context.dependencies.add(locPath);
-                      context.uses.add(locPath);
                     }
                   }
 

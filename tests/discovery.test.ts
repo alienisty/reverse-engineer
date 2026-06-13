@@ -85,7 +85,7 @@ describe('DiscoveryService', () => {
 
     expect(context.main).toContain(mainPath);
     expect(context.dependencies).toContain(implPath);
-    expect(context.uses).toContain(implPath);
+    expect(context.uses).not.toContain(implPath);
     expect(consoleErrorSpy).not.toHaveBeenCalled();
     consoleErrorSpy.mockRestore();
     rmSync(pwd, { recursive: true, force: true });
