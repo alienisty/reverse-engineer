@@ -39,7 +39,7 @@ This tool automates the creation of technical design documents by analyzing sour
 ```
 
 ## Core Components
-- **`Orchestrator` (`src/orchestrator.ts`):** The central controller. It manages the sequence: language detection -> LSP startup -> workspace discovery -> context classification -> prompt building -> LLM invocation -> mermaid post-processing -> extract checklist -> design review loop -> file saving.
+- **`Orchestrator` (`src/orchestrator.ts`):** The central controller. It manages the sequence: language detection -> LSP startup -> workspace discovery -> context classification -> context deduplication -> prompt building -> LLM invocation -> mermaid post-processing -> extract checklist -> design review loop -> file saving.
 - **`LSPManager` (`src/lspManager.ts`):** Manages multiple simultaneous LSP instances based on detected languages.
 - **`DiscoveryService` (`src/discovery.ts`):** Uses LSP (document symbols, definitions, type definitions, references) to discover workspace imports, symbols, and references to build a context graph of the codebase, recursively scanning discovered files that share a directory with the initial input files.
 - **`ContextClassifier` (`src/classify/`):** Invokes the LLM to classify discovered dependencies and promote integral candidates to `main` files.
@@ -55,7 +55,7 @@ This tool automates the creation of technical design documents by analyzing sour
 1. **Input & Config:** CLI parses options, loads the base configuration, and overlays either the `--config` file or the workspace-level `config/lsp.config.json`.
 2. **Language Detection & LSP Startup:** Extension-based language detection occurs and matching LSP processes are spawned.
 3. **Workspace Discovery:** Discovers `main`, `dependencies`, and `uses` files via LSP.
-4. **Context Classification:** Dependency promotion classification runs to move integral files into `main`.
+4. **Context Classification & Deduplication:** Dependency promotion classification runs to move integral files into `main`. Following this, a deduplication pass is run across all buckets in the `ContextMap` according to a priority order (`main` > `dependencies` > `uses`) to ensure no path is present in multiple lists.
 5. **Prompt Building & Generation:** `PromptBuilder` aggregates files, and the LLM streams the initial design document.
 6. **Mermaid Post-Processing:** Diagrams are checked for syntax correctness and repaired if necessary.
 7. **Design Review Loop (up to 3 rounds):**

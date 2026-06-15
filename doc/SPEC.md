@@ -60,7 +60,7 @@ interface ContextMap {
 }
 ```
 
-Paths are absolute, resolved under `--pwd`, deduplicated per bucket, and sorted lexicographically. Discovery includes **every** distinct in-workspace path per bucket — no hit ranking, top-k caps, or fallback lists.
+Paths are absolute, resolved under `--pwd`, and deduplicated both within each bucket and across all buckets according to the priority: `main` > `dependencies` > `uses` (so that a path exists in at most one bucket). Discovery includes **every** distinct in-workspace path per bucket — no hit ranking, top-k caps, or fallback lists.
 
 ### Context classification (dependency promotion)
 
@@ -119,13 +119,13 @@ See [LSP.md](./LSP.md) for discovery requests and response handling.
 Builds a `ContextMap` by first querying `textDocument/documentSymbol` to identify the file header, scanning unique header words, and resolving their imports via LSP definitions. It then walks semantic tokens and routes LSP navigation results into three buckets (see LSP bucket routing above). It also recursively processes newly discovered files in the dependencies or uses sets that reside in the same directory as any of the initial input files. Handles `null`, single, and array LSP location results; logs and continues on per-file or per-symbol failures. Returns all deduped paths per bucket within `--pwd`.
 
 ### Context classification (`src/classify/`)
-Post-discovery LLM step that promotes integral dependency files to `main` (see Context classification above). `Orchestrator` invokes it between discovery and prompt building.
+Post-discovery LLM step that promotes integral dependency files to `main` (see Context classification above). `Orchestrator` invokes it between discovery and prompt building, followed by a ContextMap deduplication step (`deduplicateContextMap` from `src/utils/contextUtils.ts`).
 
 ### Prompt Builder (`PromptBuilder`)
 Assembles the user prompt from `ContextMap` file contents under `## Main`, `## Dependencies`, and `## Uses`, with explicit role framing matching the shared source role model. Lives in `src/promptBuilder.ts` (application layer, not `utils`).
 
 ### Orchestrator (`Orchestrator`)
-Runs the pipeline: detect languages -> start LSPs -> discover context -> build prompt -> call LLM -> mermaid post-process -> extract coverage checklist -> run review/revision processor with immediate artifact persistence under `<outputRoot>/<name>/`.
+Runs the pipeline: detect languages -> start LSPs -> discover context -> classify dependencies -> deduplicate context -> build prompt -> call LLM -> mermaid post-process -> extract coverage checklist -> run review/revision processor with immediate artifact persistence under `<outputRoot>/<name>/`.
 
 Key responsibilities:
 - Writes `prompt.<model>.md` and initial post-processed design as `design.v0.<model>.md` before review.

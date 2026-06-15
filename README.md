@@ -6,7 +6,7 @@ A tool that reverse engineers source code into detailed design documents. Given 
 
 - **Language Detection**: Automatically detects programming languages from file extensions.
 - **Multi-Language LSP Integration**: Supports simultaneous, configurable language servers (via `config/lsp.config.json`).
-- **Implementation Context**: Discovers files that implement functions/types (not just call them).
+- **Implementation Context**: Discovers files that implement functions/types (not just call them), and deduplicates context buckets (`main` > `dependencies` > `uses`) to ensure each file path is included in at most one set.
 - **LLM-Powered**: Generates comprehensive design documents using the official Node.js `openai` library.
 - **Mermaid validation and repair**: Diagrams in the generated design are parsed and, when invalid, surgically repaired by the LLM (up to three attempts) before the design file is written.
 - **Programmatic design review**: Each run builds a coverage checklist from discovered source files/symbols and runs up to 3 review rounds.

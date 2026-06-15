@@ -12,6 +12,7 @@ import { extractCoverageChecklist } from './review/extractCoverageChecklist.js';
 import { DesignReviewProcessor } from './review/designReviewProcessor.js';
 import { classifyContextDependencies } from './classify/classifyContextDependencies.js';
 import { createConsoleProgressLogger, type ProgressLogger } from './progressLogger.js';
+import { deduplicateContextMap } from './utils/contextUtils.js';
 
 export interface OrchestratorConfig {
   name: string;
@@ -98,6 +99,8 @@ export class Orchestrator {
           `Context map after classification: ${context.main.length} main, ${context.dependencies.length} dependencies, ${context.uses.length} uses`,
         );
       }
+
+      context = deduplicateContextMap(context);
 
       log('Building generation prompt');
       const prompt = this.promptBuilder.buildPrompt(context);
