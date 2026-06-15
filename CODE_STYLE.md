@@ -36,3 +36,4 @@
 - **Do:** Keep components modular and testable via dependency injection.
 - **Don't:** Hardcode configurations; use `config/` or environment variables.
 - **Don't:** Use `console.log` for debugging in production code (use a proper logger if added later).
+- **Don't:** Make methods public only for testing purposes

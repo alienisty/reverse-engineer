@@ -18,7 +18,6 @@ describe('Orchestrator Integration', () => {
 
     const mockDiscovery = {
         discoverImplementations: (jest.fn() as any).mockResolvedValue(['service.ts']),
-        discoverTypeImplementations: (jest.fn() as any).mockResolvedValue(['type.ts']),
         discoverContext: (jest.fn() as any).mockResolvedValue({ main: [], dependencies: [], uses: [] }),
     } as any;
 

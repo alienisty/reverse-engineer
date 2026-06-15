@@ -68,6 +68,10 @@ Implemented in `DiscoveryService.discoverContext` (`src/discovery.ts`).
      - For `interface` or `abstract` declarations: request **`textDocument/implementation`** and add in-workspace implementation paths to `dependencies`.
      - For `class` or `interface`: request **`textDocument/references`** (excluding the declaration) and add in-workspace reference paths to `uses`.
 
+### Recursive Same-Directory Context Scan
+
+After the initial input files have been analyzed, the discovery algorithm recursively scans any newly discovered files in the `dependencies` or `uses` sets that reside in the same directory as any of the initial input files. This step repeats until all such same-directory context files are processed.
+
 ### Response normalization
 
 LSP navigation methods may return `null`, a single `Location`, a single `LocationLink`, or an array of either shape. Discovery normalizes all of these to arrays before processing. `LocationLink.targetUri` and `Location.uri` are both supported when extracting file paths.

@@ -6,4 +6,3 @@
 - A task is complete only when:
   1. All tests pass
   2. `doc/SPEC.md`, `ARCHITECTURE.md`, and `README.md` are consolidated and updated to reflect all changes made by the completed tasks.
-- When a task is completed, commit to git.

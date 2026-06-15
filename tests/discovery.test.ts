@@ -250,51 +250,6 @@ describe('DiscoveryService', () => {
     rmSync(pwd, { recursive: true, force: true });
   });
 
-  it('discoverTypeImplementations returns main, dependencies, and uses', async () => {
-    const pwd = mkdtempSync(path.join(os.tmpdir(), 'reverse-engineer-discovery-'));
-    const srcDir = path.join(pwd, 'src');
-    mkdirSync(srcDir, { recursive: true });
-    const mainPath = path.join(srcDir, 'main.ts');
-    const depPath = path.join(srcDir, 'dep.ts');
-    const usePath = path.join(srcDir, 'use.ts');
-    writeFileSync(mainPath, 'interface Main {}');
-    writeFileSync(depPath, 'type Dep = string;');
-    writeFileSync(usePath, 'class Consumer implements Main {}');
-
-    const mainUri = pathToFileURL(mainPath).toString();
-    const depUri = pathToFileURL(depPath).toString();
-    const useUri = pathToFileURL(usePath).toString();
-
-    const mockLsp = {
-      openDocument: jest.fn().mockResolvedValue(undefined),
-      sendRequest: jest.fn((lang: string, method: string) => {
-        if (method === 'textDocument/semanticTokens/full') {
-          return Promise.resolve({ data: [0, 0, 4, 0, 3] });
-        }
-        if (method === 'textDocument/typeDefinition') {
-          return Promise.resolve([{ uri: mainUri }, { uri: depUri }]);
-        }
-        if (method === 'textDocument/references') {
-          return Promise.resolve([{ uri: useUri }]);
-        }
-        return Promise.resolve([]);
-      }),
-      getSemanticTokensLegend: jest.fn(() => ({
-        tokenTypes: ['interface'],
-        tokenModifiers: ['public', 'declaration'],
-      })),
-    };
-
-    const discoveryService = new DiscoveryService(mockLsp as unknown as LSPManager, {
-      servers: { typescript: { command: 'ts', args: [] } },
-      extensions: { ts: 'typescript' },
-    });
-
-    const discovered = await discoveryService.discoverTypeImplementations(['src/main.ts'], pwd);
-    expect(discovered).toEqual(expect.arrayContaining([mainPath, depPath, usePath]));
-    rmSync(pwd, { recursive: true, force: true });
-  });
-
   it('promotes generic type parameter declaration typeDefinition hits to main', async () => {
     const pwd = mkdtempSync(path.join(os.tmpdir(), 'reverse-engineer-discovery-'));
     const srcDir = path.join(pwd, 'src');
@@ -552,6 +507,66 @@ public class Main {}`);
     // Check that we requested definitions for words in the header
     const definitionCalls = mockLsp.sendRequest.mock.calls.filter(c => c[1] === 'textDocument/definition');
     expect(definitionCalls.length).toBeGreaterThan(0);
+
+    rmSync(pwd, { recursive: true, force: true });
+  });
+
+  it('should recursively discover context files that are in the same directory as input files', async () => {
+    const pwd = mkdtempSync(path.join(os.tmpdir(), 'reverse-engineer-discovery-'));
+    const srcDir = path.join(pwd, 'src');
+    const otherDir = path.join(pwd, 'src', 'other');
+    mkdirSync(otherDir, { recursive: true });
+
+    const mainPath = path.join(srcDir, 'main.ts');
+    const sameDirDepPath = path.join(srcDir, 'sameDirDep.ts');
+    const distantDepPath = path.join(otherDir, 'distantDep.ts');
+
+    writeFileSync(mainPath, 'class Main {}');
+    writeFileSync(sameDirDepPath, 'class SameDirDep {}');
+    writeFileSync(distantDepPath, 'class DistantDep {}');
+
+    const mainUri = pathToFileURL(mainPath).toString();
+    const sameDirDepUri = pathToFileURL(sameDirDepPath).toString();
+    const distantDepUri = pathToFileURL(distantDepPath).toString();
+
+    const mockLsp = {
+      openDocument: jest.fn().mockResolvedValue(undefined),
+      sendRequest: jest.fn((lang: string, method: string, params: any) => {
+        const docUri = params?.textDocument?.uri;
+        if (method === 'textDocument/semanticTokens/full') {
+          return Promise.resolve({ data: [0, 0, 4, 0, 3] });
+        }
+        if (method === 'textDocument/typeDefinition') {
+          if (docUri === mainUri) {
+            return Promise.resolve([{ uri: sameDirDepUri }]);
+          }
+          if (docUri === sameDirDepUri) {
+            return Promise.resolve([{ uri: distantDepUri }]);
+          }
+        }
+        return Promise.resolve([]);
+      }),
+      getSemanticTokensLegend: jest.fn(() => ({
+        tokenTypes: ['class'],
+        tokenModifiers: ['public', 'declaration'],
+      })),
+    };
+
+    const discoveryService = new DiscoveryService(mockLsp as unknown as LSPManager, {
+      servers: { typescript: { command: 'ts', args: [] } },
+      extensions: { ts: 'typescript' },
+    });
+
+    const context = await discoveryService.discoverContext(['src/main.ts'], pwd);
+
+    expect(context.main).toContain(mainPath);
+    expect(context.dependencies).toContain(sameDirDepPath);
+    expect(context.dependencies).toContain(distantDepPath);
+
+    const openedUris = mockLsp.openDocument.mock.calls.map((c: any) => c[1]);
+    expect(openedUris).toContain(mainUri);
+    expect(openedUris).toContain(sameDirDepUri);
+    expect(openedUris).not.toContain(distantDepUri);
 
     rmSync(pwd, { recursive: true, force: true });
   });
