@@ -45,6 +45,7 @@ This tool automates the creation of technical design documents by analyzing sour
 - **`ContextClassifier` (`src/classify/`):** Invokes the LLM to classify discovered dependencies and promote integral candidates to `main` files.
 - **`LLMService` (`src/llm.ts`):** Interfaces with the configured LLM API using the official Node.js SDK.
 - **`PromptBuilder` (`src/promptBuilder.ts`):** Converts the classified context map into a structured prompt for the LLM.
+- **`ProgressLogger` (`src/progressLogger.ts`):** Handles CLI output logging. Includes `createConsoleProgressLogger` for clean line-by-line output, and `TUIProgressLogger` for a rich, in-place dashboard showing real-time spinner animations, pipeline stages, elapsed time, and scrolling logs (when stdout is a TTY and not disabled).
 - **`MermaidPostProcessor` (`src/mermaid/`):** Extracts, parses, and validates all Mermaid diagrams in the generated design document, invoking the LLM up to three times to repair any invalid syntax.
 - **`DesignReviewProcessor` (`src/review/`):** Orchestrates the programmatic design review and revision loop:
   - **`extractCoverageChecklist`**: Generates a checklist of files and symbols from the main files. Defines symbol names defined in main files are propagated as search terms to their parent files.

@@ -7,7 +7,7 @@ import { DiscoveryService } from './discovery.js';
 import { PromptBuilder } from './promptBuilder.js';
 import { Orchestrator } from './orchestrator.js';
 import { MermaidPostProcessor } from './mermaid/mermaidPostProcessor.js';
-import { createConsoleProgressLogger } from './progressLogger.js';
+import { createConsoleProgressLogger, TUIProgressLogger } from './progressLogger.js';
 import { resolveLSPConfig } from './utils/configLoader.js';
 
 const program = new Command();
@@ -25,6 +25,7 @@ program
     '--output <path>',
     'Directory for generated artifacts (relative paths resolve from cwd; defaults to --pwd)'
   )
+  .option('--no-tui', 'Disable TUI progress display')
   .argument('<files...>', 'Input file paths')
   .action(async (files, options) => {
     const pwd = path.resolve(options.pwd);
@@ -49,11 +50,13 @@ program
     });
     const discoveryService = new DiscoveryService(lspManager, lspConfig);
     const promptBuilder = new PromptBuilder();
-    const progressLogger = createConsoleProgressLogger();
+    const useTui = options.tui && process.stdout.isTTY;
+    const progressLogger = useTui ? new TUIProgressLogger() : createConsoleProgressLogger();
+    
     const mermaidPostProcessor = new MermaidPostProcessor({
       llmService,
-      logInfo: progressLogger.info,
-      logWarning: progressLogger.warn,
+      logInfo: progressLogger.info.bind(progressLogger),
+      logWarning: progressLogger.warn.bind(progressLogger),
     });
     const orchestrator = new Orchestrator(
       lspManager,
@@ -73,9 +76,15 @@ program
             pwd,
             ...(output !== undefined ? { output } : {}),
         });
+        if (progressLogger.stop) {
+            progressLogger.stop(true);
+        }
         console.log('Design document generated!');
         process.exit(0);
     } catch (e) {
+        if (progressLogger.stop) {
+            progressLogger.stop(false);
+        }
         console.error(e);
         process.exit(1);
     }

@@ -13,6 +13,7 @@ A tool that reverse engineers source code into detailed design documents. Given 
 - **Guarded revisions**: When review finds gaps, revisions are constrained to allowed sections and validated for structure and section preservation before acceptance.
 - **Versioned artifacts**: Writes `design.v0`, per-round `review.N` and `design.vN`, and final `design.<model>.md`.
 - **Flexible CLI**: Supports custom working directory and design naming.
+- **Terminal Progress Dashboard (TUI)**: Shows real-time spinner animations, active pipeline phase tracking, elapsed time, and a scrolling log window. Automatically falls back to clean line-by-line console logging in non-TTY environments (e.g. CI, scripts) or when `--no-tui` is specified.
 
 ## Installation
 
@@ -113,6 +114,7 @@ Ensure configured executables are installed on your system PATH.
 - `--pwd <path>` - Workspace root for LSP and input resolution (optional, defaults to current directory)
 - `--output <path>` - Root directory for generated artifacts (optional, defaults to `--pwd`; relative paths resolve from cwd; created if missing)
 - `--config <path>` - Optional LSP config overlay merged onto the application base
+- `--no-tui` - Disable TUI progress display (reverts to standard line-by-line console logs)
 - `<files...>` - Input file paths (relative to --pwd if provided)
 
 ## Output

@@ -133,6 +133,21 @@ Key responsibilities:
 - Passes `ContextMap`, workspace root, generation prompt, and programmatic checklist to the review processor.
 - Propagates hard errors to the CLI; always shuts down LSPs in `finally`.
 
+### Progress Logger (`src/progressLogger.ts`)
+
+Encapsulates CLI progress output tracking and display. It exposes two core implementations:
+1. **`ConsoleProgressLogger`**: Renders standard, prefix-based (`[reverse-engineer]`) log messages line-by-line using `console.log` and `console.warn`. Used as fallback when stdout is not a TTY or when disabled.
+2. **`TUIProgressLogger`**: Displays a real-time, interactive terminal dashboard that tracks the status of 5 key pipeline stages (Initialize LSP, Workspace Discovery, Context Classification, Design Generation, and Design Review). It features:
+   - Live spinner animation (updated every 80ms) and elapsed timer.
+   - Stage progress tracking with detail notes and completion states (`pending`, `running`, `done`, `warning`, `failed`).
+   - Dynamic, regex-based parsing of log messages to transition between stages.
+   - Auto-completion of previous stages and custom messages for skipped stages (e.g. classification skipped when there are no dependency candidates).
+   - In-place terminal updates via ANSI cursor control sequences (`\x1b[A`, `\x1b[K`).
+   - A scrolling feed of the 5 most recent log messages at the bottom.
+   - Clean lifecycle termination (`stop`) to restore the cursor and finalize the stage states.
+
+Controlled via the CLI `--no-tui` flag or autodetected using `process.stdout.isTTY`.
+
 ### Design Review Processor (`src/review/designReviewProcessor.ts`)
 Coordinates reliability checks around the review/revision loop. When an optional `DesignReviewArtifactSink` is provided (the orchestrator uses `FileDesignReviewArtifactSink`), prompts and designs are written to disk at each step rather than accumulated for batch export.
 
