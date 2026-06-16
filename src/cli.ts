@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import * as path from 'node:path';
+import * as fs from 'node:fs';
 import { LSPManager } from './lspManager.js';
 import { LLMService } from './llm.js';
 import { DiscoveryService } from './discovery.js';
@@ -30,6 +31,41 @@ program
   .action(async (files, options) => {
     const pwd = path.resolve(options.pwd);
     const output = options.output ? path.resolve(options.output) : undefined;
+
+    // Validate pwd exists and is a directory
+    if (!fs.existsSync(pwd)) {
+      console.error(`Error: Working directory (pwd) does not exist: ${pwd}`);
+      process.exit(1);
+    }
+    try {
+      const stat = fs.statSync(pwd);
+      if (!stat.isDirectory()) {
+        console.error(`Error: Working directory (pwd) is not a directory: ${pwd}`);
+        process.exit(1);
+      }
+    } catch (err: any) {
+      console.error(`Error reading working directory (pwd) stats: ${err.message}`);
+      process.exit(1);
+    }
+
+    // Validate input files exist and are files
+    for (const file of files) {
+      const filePath = path.resolve(pwd, file);
+      if (!fs.existsSync(filePath)) {
+        console.error(`Error: Input file does not exist: ${filePath}`);
+        process.exit(1);
+      }
+      try {
+        const stat = fs.statSync(filePath);
+        if (!stat.isFile()) {
+          console.error(`Error: Input path is not a file: ${filePath}`);
+          process.exit(1);
+        }
+      } catch (err: any) {
+        console.error(`Error reading input file stats: ${err.message}`);
+        process.exit(1);
+      }
+    }
 
     // Validate env
     if (!process.env.LLM_BASE_URL || !process.env.LLM_API_KEY || !process.env.LLM_MODEL) {

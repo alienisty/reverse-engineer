@@ -52,7 +52,7 @@ This tool automates the creation of technical design documents by analyzing sour
   - **`validateRevisionPreservation`**: Restricts revision LLM requests to specific allowed sections targetable by feedback/checklist gaps.
 
 ## Data Flow
-1. **Input & Config:** CLI parses options, loads the base configuration, and overlays either the `--config` file or the workspace-level `config/lsp.config.json`.
+1. **Input & Config:** CLI parses options, validates that `--pwd` exists and is a directory, and that all specified input files exist (resolved relative to `--pwd`). It then loads the base configuration, and overlays either the `--config` file or the workspace-level `config/lsp.config.json`.
 2. **Language Detection & LSP Startup:** Extension-based language detection occurs and matching LSP processes are spawned.
 3. **Workspace Discovery:** Discovers `main`, `dependencies`, and `uses` files via LSP.
 4. **Context Classification & Deduplication:** Dependency promotion classification runs to move integral files into `main`. Following this, a deduplication pass is run across all buckets in the `ContextMap` according to a priority order (`main` > `dependencies` > `uses`) to ensure no path is present in multiple lists.

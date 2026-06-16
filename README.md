@@ -142,4 +142,4 @@ After generation and initial mermaid repair, the tool performs a reliability-ori
 ## Exit Codes
 
 - `0`: Successful run, including best-effort completion when max review rounds are reached with unresolved gaps.
-- `1`: Fatal failure (environment/config/LSP/discovery/LLM/file I/O issues, or exhausted review/revision retry budgets).
+- `1`: Fatal failure (environment/config/LSP/discovery/LLM/file I/O issues, invalid/non-existent `--pwd` or input files, or exhausted review/revision retry budgets).

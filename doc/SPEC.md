@@ -43,6 +43,7 @@ Write final `design.<model>.md` (latest reviewed/revised version)
   - Spawning language servers (`cwd` and `rootUri`)
   - Resolving input file paths and discovered context paths
   - Writing output to `<outputRoot>/<name>/` (`outputRoot` is `--output` or `--pwd`)
+- **Validation** — The CLI validates at startup that `--pwd` exists and is a directory, and that all specified input files exist (resolved relative to `--pwd`). If validation fails, the tool exits immediately with exit code 1.
 - **Application base config** — always loaded from the packaged `config/lsp.config.json` beside the tool install.
 - **`--config`** — optional overlay merged onto the base; absolute paths are used as-is, relative paths resolve from the process working directory. When set, the project overlay under `--pwd` is not applied.
 - Input paths on the CLI are relative to `--pwd` when provided.
